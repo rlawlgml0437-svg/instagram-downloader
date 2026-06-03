@@ -5,6 +5,15 @@ type InstagramPostInfo = {
   shortcode: string;
 };
 
+type InstagramMediaResult = {
+  shortcode: string;
+  type: string;
+  title?: string;
+  image?: string;
+  video?: string;
+  url: string;
+};
+
 const INSTAGRAM_URL_PATTERN = /https?:\/\/(?:www\.)?instagram\.com\/(p|reel|reels|tv)\/([A-Za-z0-9_-]+)/i;
 
 const parseInstagramShortcode = (url: string): InstagramPostInfo | null => {
@@ -21,27 +30,42 @@ const App = () => {
   const [postUrl, setPostUrl] = useState('');
   const [error, setError] = useState('');
   const [postInfo, setPostInfo] = useState<InstagramPostInfo | null>(null);
+  const [media, setMedia] = useState<InstagramMediaResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const embedUrl = useMemo(() => {
     return postInfo ? `https://www.instagram.com/${postInfo.type}/${postInfo.shortcode}/embed` : null;
   }, [postInfo]);
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError('');
+    setMedia(null);
+    setPostInfo(null);
     setIsLoading(true);
 
     const parsed = parseInstagramShortcode(postUrl.trim());
     if (!parsed) {
       setError('올바른 인스타그램 게시물 링크를 입력해주세요. 예: https://www.instagram.com/p/SHORTCODE 또는 https://www.instagram.com/reels/SHORTCODE');
-      setPostInfo(null);
       setIsLoading(false);
       return;
     }
 
     setPostInfo(parsed);
-    setIsLoading(false);
+
+    try {
+      const response = await fetch(`http://localhost:4174/api/instagram?url=${encodeURIComponent(postUrl.trim())}`);
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({ error: '서버 응답 오류' }));
+        throw new Error(body.error || '서버에서 데이터를 가져오지 못했습니다.');
+      }
+      const data = await response.json();
+      setMedia(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -86,12 +110,44 @@ const App = () => {
                 loading="lazy"
               />
             </div>
-            <div className="preview-footer">
-              <p>
-                실제 다운로드 기능은 백엔드 연동이 필요합니다. 이 프로젝트에 서버를 추가하면
-                사진이나 영상을 직접 다운로드하도록 확장할 수 있습니다.
-              </p>
-            </div>
+            {media && (
+              <div className="preview-footer">
+                <p className="font-semibold">다운로드 가능한 미디어</p>
+                <div className="mt-4 space-y-3">
+                  {media.video && (
+                    <a
+                      href={media.video}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-block rounded-2xl bg-brand-point px-5 py-3 text-white"
+                    >
+                      동영상 열기 / 저장
+                    </a>
+                  )}
+                  {media.image && (
+                    <a
+                      href={media.image}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-block rounded-2xl bg-white border border-gray-200 px-5 py-3 text-brand-point"
+                    >
+                      이미지 열기 / 저장
+                    </a>
+                  )}
+                  {!media.video && !media.image && (
+                    <p>미디어를 찾을 수 없거나 Instagram에서 접근이 제한된 게시물입니다.</p>
+                  )}
+                </div>
+              </div>
+            )}
+            {!media && (
+              <div className="preview-footer">
+                <p>
+                  실제 다운로드 기능은 백엔드 연동이 필요합니다. 이 프로젝트에 서버를 추가하면
+                  사진이나 영상을 직접 다운로드하도록 확장할 수 있습니다.
+                </p>
+              </div>
+            )}
           </section>
         )}
       </main>
