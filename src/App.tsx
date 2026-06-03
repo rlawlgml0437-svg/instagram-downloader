@@ -54,7 +54,10 @@ const App = () => {
     setPostInfo(parsed);
 
     try {
-      const response = await fetch(`http://localhost:4174/api/instagram?url=${encodeURIComponent(postUrl.trim())}`);
+      const apiUrl = import.meta.env.VITE_API_BASE_URL
+        ? `${import.meta.env.VITE_API_BASE_URL}/api/instagram?url=${encodeURIComponent(postUrl.trim())}`
+        : `/api/instagram?url=${encodeURIComponent(postUrl.trim())}`;
+      const response = await fetch(apiUrl);
       if (!response.ok) {
         const body = await response.json().catch(() => ({ error: '서버 응답 오류' }));
         throw new Error(body.error || '서버에서 데이터를 가져오지 못했습니다.');

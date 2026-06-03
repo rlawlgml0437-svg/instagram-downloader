@@ -7,7 +7,7 @@
 1. `cd /Users/owal/Desktop/insta`
 2. `npm install`
 3. `npm run dev`
-4. 다른 터미널에서 `npm run server`로 백엔드를 실행합니다.
+4. 로컬에서는 별도 백엔드가 필요하면 `npm run server`를 실행하거나, Vercel에 배포하면 `/api/instagram` 함수가 자동으로 사용됩니다.
 
 ## 기능
 
@@ -15,12 +15,12 @@
 - 유효한 링크가 입력되면 게시물 임베드를 보여줍니다.
 - 백엔드 API를 통해 Instagram 미디어 URL을 가져옵니다.
 
-## 서버 추가
+## 배포 방법
 
-이 프로젝트는 `server.js`를 통해 Instagram 게시물 페이지에서 `og:image`와 `og:video` 메타 태그를 읽어옵니다. 프론트엔드는 `http://localhost:4174/api/instagram?url=...`로 요청해서 미디어 URL 정보를 가져옵니다.
+- 로컬 개발: `npm run dev` + `npm run server`
+- Vercel 배포: `api/instagram.js`가 서버리스 함수로 동작하므로 별도 서버 없이도 `/api/instagram` 경로를 사용할 수 있습니다.
 
-## 실행 예시
+## 주의
 
-- `npm run dev` → 프론트엔드
-- `npm run server` → 백엔드
+- 지금까지의 코드는 `localhost:4174`로만 동작하는 기존 서버 대신, Vercel 배포 시 `api/instagram.js`를 통해 직접 데이터를 가져오도록 개선되었습니다.
 
